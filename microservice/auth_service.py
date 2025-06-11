@@ -5,12 +5,17 @@ import logging
 import os
 
 # Ensure log directory
-os.makedirs('/app', exist_ok=True)
+import os
+import logging
+
+log_file_path = '/app/auth_logs.log'  # matches the mount target
+
 logging.basicConfig(
-    filename='/app/microservice.log',
+    filename=log_file_path,
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
+
 
 app = Flask(__name__)
 
