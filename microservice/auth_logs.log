@@ -5,3 +5,21 @@
 2025-06-11 13:42:13,112 - INFO - [33mPress CTRL+C to quit[0m
 2025-06-11 13:42:22,310 - INFO - 172.20.0.3 - - [11/Jun/2025 13:42:22] "GET /dos HTTP/1.0" 200 -
 2025-06-11 13:42:25,908 - INFO - 172.20.0.3 - - [11/Jun/2025 13:42:25] "GET /dos HTTP/1.0" 200 -
+2025-06-11 14:18:37,375 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.20.0.2:5000
+2025-06-11 14:18:37,376 - INFO - [33mPress CTRL+C to quit[0m
+2025-06-11 14:19:32,566 - INFO - Successful login for admin
+2025-06-11 14:19:32,573 - INFO - Request processed in 0.0076 seconds
+2025-06-11 14:19:32,578 - INFO - 172.20.0.1 - - [11/Jun/2025 14:19:32] "POST /login HTTP/1.1" 200 -
+2025-06-11 14:19:38,480 - INFO - 172.20.0.3 - - [11/Jun/2025 14:19:38] "GET /dos HTTP/1.0" 200 -
+2025-06-11 14:20:49,869 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.20.0.2:5000
+2025-06-11 14:20:49,870 - INFO - [33mPress CTRL+C to quit[0m
+2025-06-11 14:21:01,684 - INFO - Successful login for admin
+2025-06-11 14:21:01,685 - INFO - Request processed in 0.0025 seconds
+2025-06-11 14:21:01,686 - INFO - 172.20.0.1 - - [11/Jun/2025 14:21:01] "POST /login HTTP/1.1" 200 -
+2025-06-11 14:21:04,561 - INFO - 172.20.0.3 - - [11/Jun/2025 14:21:04] "GET /dos HTTP/1.0" 200 -
