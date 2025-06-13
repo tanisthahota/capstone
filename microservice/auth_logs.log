@@ -23,3 +23,33 @@
 2025-06-11 14:21:01,685 - INFO - Request processed in 0.0025 seconds
 2025-06-11 14:21:01,686 - INFO - 172.20.0.1 - - [11/Jun/2025 14:21:01] "POST /login HTTP/1.1" 200 -
 2025-06-11 14:21:04,561 - INFO - 172.20.0.3 - - [11/Jun/2025 14:21:04] "GET /dos HTTP/1.0" 200 -
+2025-06-13 06:18:16,401 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.19.0.2:5000
+2025-06-13 06:18:16,401 - INFO - [33mPress CTRL+C to quit[0m
+2025-06-13 06:20:26,399 - INFO - 172.19.0.3 - - [13/Jun/2025 06:20:26] "GET /dos HTTP/1.0" 200 -
+2025-06-13 06:22:45,756 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.19.0.2:5000
+2025-06-13 06:22:45,756 - INFO - [33mPress CTRL+C to quit[0m
+2025-06-13 06:23:25,254 - INFO - 172.19.0.3 - - [13/Jun/2025 06:23:25] "GET /dos HTTP/1.0" 200 -
+2025-06-13 06:26:35,899 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.19.0.2:5000
+2025-06-13 06:26:35,899 - INFO - [33mPress CTRL+C to quit[0m
+2025-06-13 06:27:45,011 - INFO - 172.19.0.3 - - [13/Jun/2025 06:27:45] "GET /dos HTTP/1.0" 200 -
+2025-06-13 06:31:40,456 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.19.0.2:5000
+2025-06-13 06:31:40,457 - INFO - [33mPress CTRL+C to quit[0m
+2025-06-13 06:32:42,551 - INFO - 172.19.0.3 - - [13/Jun/2025 06:32:42] "GET /dos HTTP/1.0" 200 -
+2025-06-13 06:34:37,754 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.19.0.2:5000
+2025-06-13 06:34:37,754 - INFO - [33mPress CTRL+C to quit[0m
+2025-06-13 06:34:46,547 - INFO - 172.19.0.3 - - [13/Jun/2025 06:34:46] "GET /dos HTTP/1.0" 200 -

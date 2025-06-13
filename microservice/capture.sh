@@ -12,10 +12,9 @@ TCPDUMP_PID=$!
 sleep 2
 
 # Simulate some traffic (or call curl, attack scripts, etc.)
-echo "[*] Simulating API request..."
-curl -X POST http://localhost:5000/login \
-     -H "Content-Type: application/json" \
-     -d '{"username":"admin","password":"password"}'
+#curl -X POST http://localhost:5000/login \
+ #    -H "Content-Type: application/json" \
+  #   -d '{"username":"admin","password":"password"}'
 
 # Wait a bit or run your DoS scripts here
 sleep 20

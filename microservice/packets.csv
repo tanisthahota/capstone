@@ -1,5 +1,1 @@
 Time,Protocol,Source,Destination,Info
-2025-06-11 19:51:06.689134,IP,127.0.0.1.61969,127.0.0.1.5000,"Flags [S], seq 537816072, win 65535, options [mss 16344,nop,wscale 6,nop,nop,TS val 58331784 ecr 0,sackOK,eol], length 0"
-2025-06-11 19:51:06.689144,IP,127.0.0.1.61969,127.0.0.1.5000,"Flags [S], seq 537816072, win 65535, options [mss 16344,nop,wscale 6,nop,nop,TS val 58331784 ecr 0,sackOK,eol], length 0"
-2025-06-11 19:51:06.689155,IP,127.0.0.1.5000,127.0.0.1.61969,"Flags [R.], seq 0, ack 537816073, win 0, length 0"
-2025-06-11 19:51:06.689157,IP,127.0.0.1.5000,127.0.0.1.61969,"Flags [R.], seq 0, ack 1, win 0, length 0"
