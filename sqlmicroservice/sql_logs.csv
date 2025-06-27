@@ -1,0 +1,44 @@
+2025-06-27 12:19:24,618,[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.29.106:5000
+2025-06-27 12:19:24,618,[33mPress CTRL+C to quit[0m
+2025-06-27 12:19:32,291,127.0.0.1,GET,/login,admin'--,anything,SELECT * FROM users WHERE username='admin'--' AND password='anything',Failure,curl/8.9.1
+2025-06-27 12:19:32,292,127.0.0.1 - - [27/Jun/2025 12:19:32] "GET /login?username=admin'--&password=anything HTTP/1.1" 200 -
+2025-06-27 12:34:45,526,[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.29.106:5000
+2025-06-27 12:34:45,526,[33mPress CTRL+C to quit[0m
+2025-06-27 12:35:52,734,Exception on /login [GET]
+Traceback (most recent call last):
+  File "/home/uday/.local/lib/python3.13/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/uday/.local/lib/python3.13/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/home/uday/.local/lib/python3.13/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/uday/.local/lib/python3.13/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home/uday/Desktop/CapstoneReal/capstone/sqlmicroservice/vulnerable.py", line 25, in login
+    logging.info(f"{ip},{request.method},{request.path},{username},{password},{query},{status},{ua}")
+                    ^^
+NameError: name 'ip' is not defined. Did you mean: 'id'?
+2025-06-27 12:35:52,740,127.0.0.1 - - [27/Jun/2025 12:35:52] "[35m[1mGET /login?username=admin'%20--%20&password=doesntmatter HTTP/1.1[0m" 500 -
+2025-06-27 12:36:11,923,Exception on /login [GET]
+Traceback (most recent call last):
+  File "/home/uday/.local/lib/python3.13/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/uday/.local/lib/python3.13/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/home/uday/.local/lib/python3.13/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/uday/.local/lib/python3.13/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home/uday/Desktop/CapstoneReal/capstone/sqlmicroservice/vulnerable.py", line 25, in login
+    logging.info(f"{ip},{request.method},{request.path},{username},{password},{query},{status},{ua}")
+                    ^^
+NameError: name 'ip' is not defined. Did you mean: 'id'?
+2025-06-27 12:36:11,924,127.0.0.1 - - [27/Jun/2025 12:36:11] "[35m[1mGET /login?username=admin'%20--%20&password=doesntmatter HTTP/1.1[0m" 500 -
