@@ -1,7 +1,7 @@
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from chunchun import Agent
+from agent_dec import Agent
 import pandas as pd
 
 ref_data = pd.read_csv(r"C:\Users\zwano\OneDrive\Desktop\cappy\capstone\dos.csv")
@@ -45,4 +45,4 @@ def dos(logs):
         ),
         handoffs=[slowloris, hulk, goldeneye]
     )
-    return identifier
+    return identifier.run(logs)
