@@ -3,9 +3,6 @@
 from handoffs.dos import dos_agent
 
 def handoff(log_entry):
-    """
-    Smart router that selects the right agent for a given log.
-    """
     log_lower = log_entry.lower()
 
     if "flood" in log_lower or "syn" in log_lower:
