@@ -1,0 +1,142 @@
+[2025-09-16 23:37:20] 🚀 Starting PayPal Clone Ecosystem Test Suite
+[2025-09-16 23:37:20] ==============================================
+[2025-09-16 23:37:20] 
+[2025-09-16 23:37:20] 🏥 STEP 1: Health Checks
+[2025-09-16 23:37:20] ========================
+[2025-09-16 23:37:21] 🔄 API Call: GET /auth/health
+[2025-09-16 23:37:21] 📥 Response: <html>
+<head><title>502 Bad Gateway</title></head>
+<body>
+<center><h1>502 Bad Gateway</h1></center>
+<hr><center>nginx/1.29.1</center>
+</body>
+</html>
+[2025-09-16 23:37:22] 🔄 API Call: GET /payment/health
+[2025-09-16 23:37:22] 📥 Response: <html>
+<head><title>502 Bad Gateway</title></head>
+<body>
+<center><h1>502 Bad Gateway</h1></center>
+<hr><center>nginx/1.29.1</center>
+</body>
+</html>
+[2025-09-16 23:37:23] 🔄 API Call: GET /notification/health
+[2025-09-16 23:37:24] 📥 Response: <html>
+<head><title>502 Bad Gateway</title></head>
+<body>
+<center><h1>502 Bad Gateway</h1></center>
+<hr><center>nginx/1.29.1</center>
+</body>
+</html>
+[2025-09-16 23:37:26] 
+[2025-09-16 23:37:26] 👤 STEP 2: User Registration
+[2025-09-16 23:37:26] ============================
+[2025-09-16 23:37:26] 📝 Registering user: alice@paypal.com
+[2025-09-16 23:37:27] 🔄 API Call: POST /auth/register
+[2025-09-16 23:37:27] 📥 Response: <html>
+<head><title>502 Bad Gateway</title></head>
+<body>
+<center><h1>502 Bad Gateway</h1></center>
+<hr><center>nginx/1.29.1</center>
+</body>
+</html>
+[2025-09-16 23:37:28] 📝 Registering user: bob@paypal.com
+[2025-09-16 23:37:28] 🔄 API Call: POST /auth/register
+[2025-09-16 23:37:29] 📥 Response: <html>
+<head><title>502 Bad Gateway</title></head>
+<body>
+<center><h1>502 Bad Gateway</h1></center>
+<hr><center>nginx/1.29.1</center>
+</body>
+</html>
+[2025-09-16 23:37:30] 📝 Registering user: charlie@paypal.com
+[2025-09-16 23:37:30] 🔄 API Call: POST /auth/register
+[2025-09-16 23:37:30] 📥 Response: <html>
+<head><title>502 Bad Gateway</title></head>
+<body>
+<center><h1>502 Bad Gateway</h1></center>
+<hr><center>nginx/1.29.1</center>
+</body>
+</html>
+[2025-09-16 23:37:32] 
+[2025-09-16 23:37:32] 🔐 STEP 3: User Login
+[2025-09-16 23:37:32] =====================
+[2025-09-16 23:37:32] 🔑 Logging in user: alice@paypal.com
+[2025-09-16 23:37:32] 🔄 API Call: POST /auth/login
+[2025-09-16 23:37:32] 📥 Response: <html>
+<head><title>502 Bad Gateway</title></head>
+<body>
+<center><h1>502 Bad Gateway</h1></center>
+<hr><center>nginx/1.29.1</center>
+</body>
+</html>
+[2025-09-16 23:37:34] 🔑 Logging in user: bob@paypal.com
+[2025-09-16 23:37:34] 🔄 API Call: POST /auth/login
+[2025-09-16 23:37:34] 📥 Response: <html>
+<head><title>502 Bad Gateway</title></head>
+<body>
+<center><h1>502 Bad Gateway</h1></center>
+<hr><center>nginx/1.29.1</center>
+</body>
+</html>
+[2025-09-16 23:37:36] 🔑 Logging in user: charlie@paypal.com
+[2025-09-16 23:37:36] 🔄 API Call: POST /auth/login
+[2025-09-16 23:37:36] 📥 Response: <html>
+<head><title>502 Bad Gateway</title></head>
+<body>
+<center><h1>502 Bad Gateway</h1></center>
+<hr><center>nginx/1.29.1</center>
+</body>
+</html>
+[2025-09-16 23:37:38] 
+[2025-09-16 23:37:38] ✅ STEP 4: Token Verification
+[2025-09-16 23:37:38] =============================
+[2025-09-16 23:37:38] 
+[2025-09-16 23:37:38] 💳 STEP 5: Payment Processing
+[2025-09-16 23:37:38] =============================
+[2025-09-16 23:37:39] 
+[2025-09-16 23:37:39] 📊 STEP 6: Payment History
+[2025-09-16 23:37:39] ==========================
+[2025-09-16 23:37:39] 
+[2025-09-16 23:37:39] ❌ STEP 7: Error Scenarios
+[2025-09-16 23:37:39] ==========================
+[2025-09-16 23:37:39] 🚫 Testing invalid login
+[2025-09-16 23:37:40] 🔄 API Call: POST /auth/login
+[2025-09-16 23:37:40] 📥 Response: <html>
+<head><title>502 Bad Gateway</title></head>
+<body>
+<center><h1>502 Bad Gateway</h1></center>
+<hr><center>nginx/1.29.1</center>
+</body>
+</html>
+[2025-09-16 23:37:41] 🚫 Testing payment without token
+[2025-09-16 23:37:41] 🔄 API Call: POST /payment/process
+[2025-09-16 23:37:41] 📥 Response: <html>
+<head><title>502 Bad Gateway</title></head>
+<body>
+<center><h1>502 Bad Gateway</h1></center>
+<hr><center>nginx/1.29.1</center>
+</body>
+</html>
+[2025-09-16 23:37:43] 🚫 Testing invalid token
+[2025-09-16 23:37:43] 🔄 API Call: POST /payment/process
+[2025-09-16 23:37:50] 📥 Response: <html>
+<head><title>502 Bad Gateway</title></head>
+<body>
+<center><h1>502 Bad Gateway</h1></center>
+<hr><center>nginx/1.29.1</center>
+</body>
+</html>
+[2025-09-16 23:37:51] 
+[2025-09-16 23:37:52] 🔄 STEP 8: Inter-Service Communication
+[2025-09-16 23:37:52] ======================================
+[2025-09-16 23:37:52] 
+[2025-09-16 23:37:52] ✅ ECOSYSTEM TEST COMPLETED
+[2025-09-16 23:37:52] ============================
+[2025-09-16 23:37:53] 📊 Total API calls made: 0
+[2025-09-16 23:37:53] 📝 Log file saved: logs/ecosystem-20250916-233719.log
+[2025-09-16 23:37:53] 
+[2025-09-16 23:37:53] 🐳 Docker container logs:
+[2025-09-16 23:37:53]   - docker-compose logs auth-service
+[2025-09-16 23:37:53]   - docker-compose logs payment-service
+[2025-09-16 23:37:53]   - docker-compose logs notification-service
+[2025-09-16 23:37:54]   - docker-compose logs api-gateway

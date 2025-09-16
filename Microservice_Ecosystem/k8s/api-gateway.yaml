@@ -21,8 +21,8 @@ data:
         server {
             listen 80;
             location /health {
-                return 200 '{"status":"healthy","service":"api-gateway"}';
                 add_header Content-Type application/json;
+                return 200 '{"status":"healthy","service":"api-gateway"}';
             }
             location /api/auth/ {
                 proxy_pass http://auth-service/;
