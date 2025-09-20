@@ -1,0 +1,50 @@
+apiVersion: audit.k8s.io/v1
+kind: Policy
+rules:
+  # Log all requests at the Metadata level
+  - level: Metadata
+    resources:
+    - group: "" # core API group
+      resources: ["pods", "services", "namespaces", "secrets", "configmaps"]
+
+  # Log pod changes at request and response level
+  - level: RequestResponse
+    resources:
+    - group: "" # core API group
+      resources: ["pods"]
+    verbs: ["create", "delete", "patch", "update"]
+
+  # Log authentication and authorization at request level
+  - level: Request
+    users: ["system:anonymous", "kubernetes-admin"]
+    verbs: ["create", "delete", "patch", "update"]
+    resources:
+    - group: "authentication.k8s.io"
+      resources: ["*"]
+    - group: "authorization.k8s.io"
+      resources: ["*"]
+
+  # Log all ConfigMap and Secret changes
+  - level: Request
+    resources:
+    - group: "" # core API group
+      resources: ["secrets", "configmaps"]
+    verbs: ["create", "delete", "patch", "update"]
+
+  # Log all authorization failures
+  - level: RequestResponse
+    users: ["system:anonymous"]
+    verbs: ["*"]
+    stages: ["ResponseStarted", "ResponseComplete"]
+    omitStages: ["RequestReceived"]
+
+  # Log deployments at RequestResponse level
+  - level: RequestResponse
+    resources:
+    - group: "apps"
+      resources: ["deployments"]
+    verbs: ["create", "delete", "patch", "update"]
+
+  # Catch-all rule to log metadata for everything else
+  - level: Metadata
+    omitStages: ["RequestReceived"]

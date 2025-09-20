@@ -10,7 +10,7 @@ docker build -t notification-service:latest ./notification-service
 
 # Deploy with Docker Compose (for development)
 echo "🐳 Starting services with Docker Compose..."
-docker-compose up -d
+docker compose up -d
 
 echo "✅ Services deployed successfully!"
 echo "🌐 API Gateway available at: http://localhost:8080"

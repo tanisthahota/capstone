@@ -3,46 +3,50 @@
 API_BASE="http://localhost:8080/api"
 LOG_FILE="logs/ecosystem-$(date +%Y%m%d-%H%M%S).log"
 
-echo "🧪 Generating Sample Logs for PayPal Clone"
-echo "==========================================="
-echo "📝 Logs will be saved to: $LOG_FILE"
-echo ""
-
 mkdir -p logs
 
 log_with_timestamp() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+    # The >&2 redirects the echo output to standard error
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >&2 | tee -a "$LOG_FILE"
 }
 
 make_api_call() {
     local method=$1
     local endpoint=$2
     local data=$3
-    local headers=$4
+    local header=$4
     
-    log_with_timestamp "🔄 API Call: $method $endpoint"
+    local url="$API_BASE$endpoint"
+    log_with_timestamp "🔄 API Call: $method $url"
     
-    if [ -n "$data" ]; then
-        if [ -n "$headers" ]; then
-            response=$(curl -s -X "$method" "$API_BASE$endpoint" -H "Content-Type: application/json" $headers -d "$data")
-        else
-            response=$(curl -s -X "$method" "$API_BASE$endpoint" -H "Content-Type: application/json" -d "$data")
-        fi
-    else
-        if [ -n "$headers" ]; then
-            response=$(curl -s -X "$method" "$API_BASE$endpoint" $headers)
-        else
-            response=$(curl -s -X "$method" "$API_BASE$endpoint")
-        fi
+    local curl_opts=(-s -X "$method")
+    
+    curl_opts+=(-H "Content-Type: application/json")
+    
+    if [ -n "$header" ]; then
+        curl_opts+=(-H "$header")
     fi
     
+    if [ -n "$data" ]; then
+        curl_opts+=(-d "$data")
+    fi
+    
+    response=$(curl "${curl_opts[@]}" "$url")
     log_with_timestamp "📥 Response: $response"
     echo "$response"
+}
+
+extract_json_value() {
+    local json="$1"
+    local key="$2"
+    # The -r flag outputs the raw string without quotes
+    echo "$json" | jq -r ".${key}"
 }
 
 log_with_timestamp "🚀 Starting PayPal Clone Ecosystem Test Suite"
 log_with_timestamp "=============================================="
 
+# STEP 1: Health Checks
 log_with_timestamp ""
 log_with_timestamp "🏥 STEP 1: Health Checks"
 log_with_timestamp "========================"
@@ -54,6 +58,7 @@ sleep 1
 make_api_call "GET" "/notification/health" "" ""
 sleep 2
 
+# STEP 2: User Registration
 log_with_timestamp ""
 log_with_timestamp "👤 STEP 2: User Registration"
 log_with_timestamp "============================"
@@ -67,6 +72,7 @@ for user in "${users[@]}"; do
     sleep 1
 done
 
+# STEP 3: User Login (Simplified)
 log_with_timestamp ""
 log_with_timestamp "🔐 STEP 3: User Login"
 log_with_timestamp "====================="
@@ -74,23 +80,50 @@ log_with_timestamp "====================="
 for user in "${users[@]}"; do
     log_with_timestamp "🔑 Logging in user: $user"
     response=$(make_api_call "POST" "/auth/login" "{\"email\":\"$user\",\"password\":\"password123\"}" "")
-    token=$(echo "$response" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
-    tokens+=("$token")
+    log_with_timestamp "🐞 Raw login response: $response"
+
+    # The new function handles everything cleanly
+    token=$(extract_json_value "$response" "token")
+    log_with_timestamp "🐞 Extracted token: $token"
+    
+    if [ -n "$token" ] && [ "$token" != "null" ]; then
+        tokens+=("$token")
+        short_token="${token:0:20}..."
+        log_with_timestamp "✅ Token extracted successfully for $user"
+        log_with_timestamp "🔒 Token details: $short_token"
+        
+        # Verify immediately after login
+        log_with_timestamp "🔑 Verifying token immediately after login"
+        make_api_call "POST" "/auth/verify" "" "Authorization: Bearer $token"
+    else
+        tokens+=("")
+        log_with_timestamp "❌ Failed to extract token for $user"
+    fi
     sleep 1
 done
-
+    
+# STEP 4: Token Verification
 log_with_timestamp ""
 log_with_timestamp "✅ STEP 4: Token Verification"  
 log_with_timestamp "============================="
 
 for i in "${!tokens[@]}"; do
-    if [ -n "${tokens[$i]}" ]; then
+    # Clean token (remove quotes, newlines, carriage returns, spaces)
+    token=$(echo "${tokens[$i]}" | tr -d '\n\r" ')
+    
+    log_with_timestamp "DEBUG Raw token for ${users[$i]}: ->${token}<-"
+3
+    if [ -n "$token" ] && [ "$token" != "null" ]; then
         log_with_timestamp "🎫 Verifying token for ${users[$i]}"
-        make_api_call "POST" "/auth/verify" "{\"token\":\"${tokens[$i]}\"}" ""
+        make_api_call "POST" "/auth/verify" "" "Authorization: Bearer $token"
         sleep 1
+    else
+        log_with_timestamp "⚠️ Skipping verification for ${users[$i]} - no valid token"
     fi
 done
 
+
+# STEP 5: Payment Processing
 log_with_timestamp ""
 log_with_timestamp "💳 STEP 5: Payment Processing"
 log_with_timestamp "============================="
@@ -104,29 +137,29 @@ payment_scenarios=(
 )
 
 for i in "${!tokens[@]}"; do
-    if [ -n "${tokens[$i]}" ]; then
+    token="${tokens[$i]}"
+    if [ -n "$token" ] && [ "$token" != "null" ]; then
         for scenario in "${payment_scenarios[@]}"; do
             IFS='|' read -r amount recipient description <<< "$scenario"
-            
             log_with_timestamp "💰 Processing payment: $amount to $recipient"
-            make_api_call "POST" "/payment/process" \
-                "{\"amount\":$amount,\"recipient\":\"$recipient\",\"description\":\"$description\"}" \
-                "-H \"Authorization: Bearer ${tokens[$i]}\""
-            sleep 2 # Allow time for notification service
+            json_payload=$(printf '{"amount":%s,"recipient":"%s","description":"%s"}' "$amount" "$recipient" "$description")
+            make_api_call "POST" "/payment/process" "$json_payload" "Authorization: Bearer $token"
+            sleep 2
         done
-        break # Only use first user for payments to avoid too many logs
     fi
 done
 
+# STEP 6: Payment History
 log_with_timestamp ""
 log_with_timestamp "📊 STEP 6: Payment History"
 log_with_timestamp "=========================="
 
-if [ -n "${tokens[0]}" ]; then
+if [ -n "${tokens[0]}" ] && [ "${tokens[0]}" != "null" ]; then
     log_with_timestamp "📈 Fetching payment history"
-    make_api_call "GET" "/payment/history" "" "-H \"Authorization: Bearer ${tokens[0]}\""
+    make_api_call "GET" "/payment/history" "" "Authorization: Bearer ${tokens[0]}"
 fi
 
+# STEP 7: Error Scenarios
 log_with_timestamp ""
 log_with_timestamp "❌ STEP 7: Error Scenarios"
 log_with_timestamp "=========================="
@@ -140,40 +173,24 @@ make_api_call "POST" "/payment/process" "{\"amount\":100,\"recipient\":\"test@te
 sleep 1
 
 log_with_timestamp "🚫 Testing invalid token"
-make_api_call "POST" "/payment/process" "{\"amount\":100,\"recipient\":\"test@test.com\",\"description\":\"Should fail\"}" "-H \"Authorization: Bearer invalid-token\""
+make_api_call "POST" "/payment/process" "{\"amount\":100,\"recipient\":\"test@test.com\",\"description\":\"Should fail\"}" "Authorization: Bearer invalid-token"
 sleep 1
 
+# STEP 8: Full Flow Test
 log_with_timestamp ""
 log_with_timestamp "🔄 STEP 8: Inter-Service Communication"
 log_with_timestamp "======================================"
 
-if [ -n "${tokens[0]}" ]; then
+if [ -n "${tokens[0]}" ] && [ "${tokens[0]}" != "null" ]; then
     log_with_timestamp "🎯 Testing complete flow: Auth → Payment → Notification"
     make_api_call "POST" "/payment/process" \
         "{\"amount\":999.99,\"recipient\":\"vip@customer.com\",\"description\":\"VIP Transaction - Full Flow Test\"}" \
-        "-H \"Authorization: Bearer ${tokens[0]}\""
+        "Authorization: Bearer ${tokens[0]}"
 fi
 
+# Final summary
 log_with_timestamp ""
 log_with_timestamp "✅ ECOSYSTEM TEST COMPLETED"
 log_with_timestamp "============================"
 log_with_timestamp "📊 Total API calls made: $(grep -c '🔄 API Call:' "$LOG_FILE")"
 log_with_timestamp "📝 Log file saved: $LOG_FILE"
-log_with_timestamp ""
-log_with_timestamp "🐳 Docker container logs:"
-log_with_timestamp "  - docker-compose logs auth-service"
-log_with_timestamp "  - docker-compose logs payment-service" 
-log_with_timestamp "  - docker-compose logs notification-service"
-log_with_timestamp "  - docker-compose logs api-gateway"
-
-echo ""
-echo "✅ Sample logs generated successfully!"
-echo "📝 Check the log file: $LOG_FILE"
-echo ""
-echo "🔍 View live service logs:"
-echo "  docker-compose logs -f --tail=50"
-echo ""
-echo "📊 View specific service logs:"
-echo "  docker-compose logs -f auth-service"
-echo "  docker-compose logs -f payment-service"
-echo "  docker-compose logs -f notification-service"

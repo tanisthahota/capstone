@@ -24,14 +24,20 @@ const verifyToken = async (req, res, next) => {
         }
 
         console.log('[PAYMENT-SERVICE] Verifying token with auth service');
-        const response = await axios.post(`${AUTH_SERVICE_URL}/verify`, { token });
+
+        // Pass token in Authorization header to auth-service
+        const response = await axios.post(`${AUTH_SERVICE_URL}/verify`, {}, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+
         req.user = response.data;
         next();
     } catch (error) {
-        console.error('[PAYMENT-SERVICE] Token verification failed:', error.message);
+        console.error('[PAYMENT-SERVICE] Token verification failed:', error.response?.data || error.message);
         res.status(401).json({ error: 'Invalid token' });
     }
 };
+
 
 // Process payment
 app.post('/process', verifyToken, async (req, res) => {

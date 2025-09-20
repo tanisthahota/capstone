@@ -5,7 +5,7 @@ echo "============================="
 echo ""
 
 # Check if ecosystem is already running
-if curl -s http://localhost:8080/health >/dev/null 2>&1; then
+if curl -s http://localhost:8080/api/health >/dev/null 2>&1; then
     echo "✅ Ecosystem is already running!"
 else
     echo "🔧 Starting ecosystem..."
@@ -26,7 +26,10 @@ echo "🎉 Quick start completed!"
 echo ""
 echo "📋 What's available:"
 echo "  🌐 API Gateway: http://localhost:8080"
-echo "  📊 Live logs: ./monitor-logs.sh"
-echo "  🔍 Service logs: docker-compose logs [service-name]"
+echo "  📊 Logs:"
+echo "     - Application logs: ./monitor-logs.sh --app"
+echo "     - System logs: ./monitor-logs.sh --system"
+echo "     - Docker events: ./monitor-logs.sh --docker"
+echo "     - Help: ./monitor-logs.sh --help"
 echo ""
-echo "🛑 To stop everything: docker-compose down"
+echo "🛑 To stop everything: docker compose down"
