@@ -26,7 +26,7 @@ from torch_geometric.nn import SAGEConv
 from tqdm import tqdm
 
 # Import our custom graph builder
-from capstone.PayPal_Ecosystem.graph_builder import NetworkGraphBuilder
+from graph_builder import NetworkGraphBuilder
 
 # --- Configuration ---
 warnings.filterwarnings('ignore')
@@ -645,10 +645,18 @@ class MultiAttackDetector:
             raise RuntimeError("❌ Cannot save a model that has not been trained.")
         
         print(f"💾 Saving enhanced model to {self.model_dir}...")
-        torch.save(self.model.state_dict(), self.model_path)
         
+        # Ensure model directory exists
+        self.model_dir.mkdir(exist_ok=True)
+        
+        # Save model state dict
+        torch.save(self.model.state_dict(), self.model_path)
+        print(f"   ✅ Model saved to: {self.model_path}")
+        
+        # Save label encoder
         with open(self.encoder_path, 'wb') as f:
             pickle.dump(self.label_encoder, f)
+        print(f"   ✅ Label encoder saved to: {self.encoder_path}")
         
         # Save graph builder info (may be empty for flow-based graphs)
         try:
@@ -664,8 +672,13 @@ class MultiAttackDetector:
         
         with open(self.graph_info_path, 'wb') as f:
             pickle.dump(graph_info, f)
+        print(f"   ✅ Graph info saved to: {self.graph_info_path}")
         
         print("✅ Enhanced model saved successfully!")
+        print(f"📁 Model files location: {self.model_dir}")
+        print(f"   - Model: {self.model_path.name}")
+        print(f"   - Encoder: {self.encoder_path.name}")
+        print(f"   - Graph Info: {self.graph_info_path.name}")
 
     def load_model(self) -> bool:
         """Loads a pre-trained model and preprocessing objects."""
@@ -742,32 +755,41 @@ def main():
         print("🎯 Pre-trained model found! Loading existing model...")
         if detector.load_model():
             print("✅ Model loaded successfully! Ready for predictions.")
+            print("\n" + "="*50)
+            print("🎯 Enhanced Network Topology Attack Detection Ready!")
+            print("="*50)
+            print("💡 This model uses realistic network topology!")
+            print("   - Nodes represent IP addresses or flows")
+            print("   - Edges represent communication patterns")
+            print("   - Features capture network behavior")
+            print("\n🔍 Ready for predictions!")
+            return
         else:
             print("❌ Failed to load existing model. Will train a new one...")
             args.train = True
-    else:
-        if args.train:
-            print("🔄 Force training requested...")
-        else:
-            print("🤔 No existing model found. Starting training...")
-        args.train = True
+    elif not args.train:
+        print("🤔 No existing model found.")
+        print("💡 To train a model, run with --train flag:")
+        print(f"   python {__file__} --train")
+        return
 
-    # Train model if needed
+    # Train model only if explicitly requested
     if args.train:
         if not args.dataset.exists():
             print(f"❌ Dataset directory not found at: {args.dataset}")
             return
         
+        print("🔄 Starting training...")
         detector.train_model(dataset_folder=args.dataset, epochs=args.epochs)
 
-    print("\n" + "="*50)
-    print("🎯 Enhanced Network Topology Attack Detection Ready!")
-    print("="*50)
-    print("💡 This model uses realistic network topology!")
-    print("   - Nodes represent IP addresses or flows")
-    print("   - Edges represent communication patterns")
-    print("   - Features capture network behavior")
-    print("\n🔍 Ready for predictions!")
+        print("\n" + "="*50)
+        print("🎯 Enhanced Network Topology Attack Detection Ready!")
+        print("="*50)
+        print("💡 This model uses realistic network topology!")
+        print("   - Nodes represent IP addresses or flows")
+        print("   - Edges represent communication patterns")
+        print("   - Features capture network behavior")
+        print("\n🔍 Ready for predictions!")
 
 def test_sample():
     """Test the model with the specific DDoS sample provided."""
