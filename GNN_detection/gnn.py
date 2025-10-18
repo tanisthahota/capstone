@@ -41,7 +41,7 @@ if torch.cuda.is_available():
 # Project directory configuration
 BASE_DIR = Path(__file__).resolve().parent
 MODEL_DIR = BASE_DIR / "models"
-DEFAULT_DATASET_DIR = Path("/Users/vishnu.v/Downloads/archive (3)")
+DEFAULT_DATASET_DIR = Path(r"C:\Users\Admin\Downloads\archive (2)")
 
 # Attack mapping for multi-class classification
 ATTACK_MAPPING = {
@@ -131,7 +131,7 @@ class MultiAttackDetector:
         # Define file paths
         self.model_dir = model_dir
         self.model_dir.mkdir(exist_ok=True)
-        self.model_path = self.model_dir / "attack_graphsage_network_model.pth"
+        self.model_path = self.model_dir / "chunchun.pth"
         self.encoder_path = self.model_dir / "label_encoder.pkl"
         self.graph_info_path = self.model_dir / "graph_info.pkl"
 
@@ -180,7 +180,7 @@ class MultiAttackDetector:
         df['attack_category'] = df[label_col].map(ATTACK_MAPPING).fillna('Other')
         
         # Filter out categories with too few samples
-        min_samples = 500  # Require at least 500 samples per category
+        min_samples = 500 # Require at least 500 samples per category
         value_counts = df['attack_category'].value_counts()
         valid_categories = value_counts[value_counts >= min_samples].index.tolist()
         if 'Other' in valid_categories:
@@ -191,7 +191,7 @@ class MultiAttackDetector:
         
         # Balance the dataset by sampling exactly 500 samples from each valid category
         balanced_dfs = []
-        samples_per_category = 250
+        samples_per_category = 500
         
         for category in valid_categories:
             category_df = df[df['attack_category'] == category]
@@ -309,14 +309,18 @@ class MultiAttackDetector:
             
             # Define the key features that the model should focus on for attack detection
             # These are commonly used in network intrusion detection
+            # Top 20 features per attack type
+
             priority_features = [
-                'Flow Duration', 'Total Fwd Packets', 'Total Backward Packets',
-                'Flow Bytes/s', 'Flow Packets/s', 'Average Packet Size',
-                'Packet Length Mean', 'Fwd Packets/s', 'Bwd Packets/s',
-                'Total Length of Fwd Packets', 'Total Length of Bwd Packets',
-                'Packet Length Std', 'FIN Flag Count', 'SYN Flag Count', 
-                'RST Flag Count', 'ACK Flag Count'
-            ]
+    'Flow Duration', 'Flow Bytes/s', 'Flow Packets/s', 'Total Fwd Packets', 'Total Length of Fwd Packets',
+    'Average Packet Size', 'Fwd IAT Mean', 'Bwd IAT Mean', 'Active Mean', 'Idle Mean',
+    'Fwd Packet Length Mean', 'Bwd Packet Length Mean', 'Fwd Packets/s', 'Bwd Packets/s',
+    'Init_Win_bytes_forward', 'Init_Win_bytes_backward', 'Avg Fwd Segment Size', 'Avg Bwd Segment Size',
+    'Fwd Header Length', 'Bwd Header Length', 'Packet Length Std', 'SYN Flag Count', 'FIN Flag Count',
+    'RST Flag Count', 'ACK Flag Count', 'Subflow Fwd Bytes', 'Subflow Bwd Bytes', 'Destination Port',
+    'Total Backward Packets', 'Packet Length Mean'
+]
+
             
             # Use available columns that exist in the data
             available_features = [col for col in priority_features if col in df_sample.columns]
@@ -797,25 +801,64 @@ def test_sample():
     print("🎯 Testing with Specific DDoS Sample")
     print("="*60)
     
-    # Your specific sample
-    sample_traffic =  {
-    'Flow Duration': 120000,                 # 120 seconds
-    'Total Fwd Packets': 120,                # small steady forward traffic
-    'Total Backward Packets': 118,           # balanced replies
-    'Total Length of Fwd Packets': 72000,    # bytes (approx 600 B avg per pkt)
-    'Total Length of Bwd Packets': 70800,    # bytes
-    'Flow Bytes/s': 1180.0,                  # (72000 + 70800) / 120.0
-    'Flow Packets/s': 1.9833333333,          # (120 + 118) / 120.0
-    'Fwd Packets/s': 1.0,                    # 120 / 120.0
-    'Bwd Packets/s': 0.9833333333,           # 118 / 120.0
-    'FIN Flag Count': 2,
-    'SYN Flag Count': 2,
+    sample_traffic = {
+    'Destination Port': 443,
+    'Flow Duration': 60365575,               # ~60.36 seconds
+    'Total Fwd Packets': 14,
+    'Total Backward Packets': 12,
+    'Total Length of Fwd Packets': 856,      # bytes
+    'Total Length of Bwd Packets': 3210,     # bytes
+    'Fwd Packet Length Mean': 61.14285714,
+    'Fwd Packet Length Std': 148.7868156,
+    'Bwd Packet Length Mean': 267.5,
+    'Bwd Packet Length Std': 553.3369021,
+    'Flow Bytes/s': 67.35627052,             # total_bytes / duration
+    'Flow Packets/s': 0.430709059,           # total_packets / duration
+    'Flow IAT Mean': 2414623.0,
+    'Flow IAT Std': 4350649.777,
+    'Flow Active Mean': 10200000.0,
+    'Flow Active Std': 14.0,
+    'Flow Idle Mean': 60400000.0,
+    'Flow Idle Std': 4643505.769,
+    'Fwd Packets/s': 5202588.785,
+    'Bwd Packets/s': 10200000.0,
+    'Fwd Header Length': 378.0,
+    'Bwd Header Length': 60300000.0,
+    'Average Packet Size': 5483098.455,
+    'Packet Length Mean': 5239338.008,
+    'Packet Length Std': 10200000.0,
+    'FIN Flag Count': 0,
+    'SYN Flag Count': 0,
     'RST Flag Count': 0,
-    'ACK Flag Count': 236,
-    'Average Packet Size': 600.0,            # (72000 + 70800) / (120 + 118)
-    'Packet Length Mean': 600.0,
-    'Packet Length Std': 40.5
+    'ACK Flag Count': 0,
+    'PSH Flag Count': 0,
+    'URG Flag Count': 0,
+    'Average Fwd Segment Size': 150.5925926,
+    'Average Bwd Segment Size': 389.9946015,
+    'Flow Duration Std': 152095.7892,
+    'Fwd IAT Mean': 156.3846154,
+    'Fwd IAT Std': 61.14285714,
+    'Bwd IAT Mean': 267.5,
+    'Bwd IAT Std': 456.0,
+    'Init_Win_bytes_forward': 29200,
+    'Init_Win_bytes_backward': 123,
+    'Fwd Seg Size Min': 3,
+    'Bwd Seg Size Min': 32,
+    'Fwd Act Data Pkts': 69667,
+    'Fwd Seg Size Avg': 46087.63757,
+    'Fwd Seg Size Std': 163742.0,
+    'Bwd Seg Size Avg': 50599.0,
+    'Fwd Header Max': 9991166.833,
+    'Bwd Header Max': 463609.9178,
+    'Flow Bytes Avg': 10200000,
+    'Flow Bytes Total': 9045547,
+    'Label': 'BENIGN'
 }
+
+
+
+
+
 
     # Load the detector
     detector = MultiAttackDetector()
