@@ -1,0 +1,23 @@
+apiVersion: audit.k8s.io/v1
+kind: Policy
+rules:
+  # Log request and response bodies for Secret access
+  - level: RequestResponse
+    resources:
+    - group: "" # Core API group
+      resources: ["secrets"]
+  # Log request and response bodies for Role/Binding changes
+  - level: RequestResponse
+    resources:
+    - group: rbac.authorization.k8s.io
+      resources: ["roles", "rolebindings", "clusterroles", "clusterrolebindings"]
+  # Log metadata for non-resource requests (like /healthz)
+  - level: Metadata
+    nonResourceURLs:
+    - "/api*" # Log paths like /api /apis
+    - "/version"
+    - "/healthz"
+    - "/livez"
+    - "/readyz"
+  # Log metadata for everything else by default
+  - level: Metadata
