@@ -19,6 +19,15 @@ RUN pip install --no-cache-dir \
     cicflowmeter==0.1.6 \
     requests==2.28.2 \
     numpy==1.23.5 \
-    pandas==1.5.3
+    pandas==1.5.3 \
+    chromadb==0.4.0 \
+    ansible==2.10.7 \
+    docker==6.0.0
+
+COPY mitigation/playbooks /app/playbooks
+COPY mitigation/mitigation.py /app/mitigation.py
+COPY mitigation/mitigation_orchestrator.py /app/mitigation_orchestrator.py
+COPY mitigation/mitigation_aggregator.py /app/mitigation_aggregator.py
+COPY mitigation/populate_chroma.py /app/populate_chroma.py
 
 CMD ["bash"]

@@ -41,7 +41,7 @@ def main():
         consumer = KafkaConsumer(
             'application-logs',
             bootstrap_servers='kafka:9092',
-            auto_offset_reset='latest',
+            auto_offset_reset='earliest',
             value_deserializer=lambda v: json.loads(v.decode('utf-8')),
             group_id='application-detector'
         )

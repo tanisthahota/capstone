@@ -51,7 +51,7 @@ const logEvent = (req, event, details) => {
         'cookie': req.headers['cookie'] || '-',
         'content-type': req.headers['content-type'] || '-',
         'connection': req.headers['connection'] || '-',
-        'lenght': req.headers['content-length'] || '0',
+        'length': req.headers['content-length'] || '0', // fixed typo
         'content': content,
         'event': event, // Custom event name
         ...details, // Additional details

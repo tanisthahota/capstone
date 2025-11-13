@@ -118,6 +118,79 @@ services:
     command: bash -c "pip install kafka-python requests docker && tail -f /dev/null"
     restart: unless-stopped
 
+  # Sandbox containers for mitigation testing
+  sandbox-api-gateway:
+    image: nginx:alpine
+    container_name: sandbox-api-gateway
+    ports:
+      - "8081:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - /tmp/jwt-secret.key:/run/secrets/jwt-secret:ro
+    environment:
+      - JWT_SECRET_FILE=/run/secrets/jwt-secret
+    command: ["nginx", "-g", "daemon off;", "-c", "/etc/nginx/nginx.conf"]
+    networks:
+      - paypal-network
+    restart: unless-stopped
+
+  sandbox-auth-service:
+    build: ./auth-service
+    container_name: sandbox-auth-service
+    ports:
+      - "3011:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - JWT_SECRET_FILE=/run/secrets/jwt-secret
+      - KAFKA_BROKER=kafka:9092
+    volumes:
+      - /tmp/jwt-secret.key:/run/secrets/jwt-secret:ro
+    depends_on:
+      - kafka
+    networks:
+      - paypal-network
+    restart: unless-stopped
+
+  sandbox-payment-service:
+    build: ./payment-service
+    container_name: sandbox-payment-service
+    ports:
+      - "3012:3002"
+    environment:
+      - NODE_ENV=development
+      - PORT=3002
+      - AUTH_SERVICE_URL=http://sandbox-auth-service:3001
+      - NOTIFICATION_SERVICE_URL=http://sandbox-notification-service:3003
+      - JWT_SECRET_FILE=/run/secrets/jwt-secret
+      - KAFKA_BROKER=kafka:9092
+    volumes:
+      - /tmp/jwt-secret.key:/run/secrets/jwt-secret:ro
+    depends_on:
+      - sandbox-auth-service
+      - kafka
+    networks:
+      - paypal-network
+    restart: unless-stopped
+
+  sandbox-notification-service:
+    build: ./notification-service
+    container_name: sandbox-notification-service
+    ports:
+      - "3013:3003"
+    environment:
+      - NODE_ENV=development
+      - PORT=3003
+      - JWT_SECRET_FILE=/run/secrets/jwt-secret
+      - KAFKA_BROKER=kafka:9092
+    volumes:
+      - /tmp/jwt-secret.key:/run/secrets/jwt-secret:ro
+    depends_on:
+      - kafka
+    networks:
+      - paypal-network
+    restart: unless-stopped
+
 networks:
   paypal-network:
     driver: bridge
