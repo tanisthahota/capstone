@@ -48,20 +48,24 @@ class CrossLayerThreatGNN(nn.Module):
             nn.Sigmoid()
         )
     
-    def forward(self, data, return_anomaly=False):
+    def forward(self, x, edge_index, batch=None, return_anomaly=False, node_level=False):
         """
-        Forward pass
+        Forward pass - supports both node-level and graph-level classification
         
         Args:
-            data: PyG Data object with x, edge_index, batch
+            x: Node features [num_nodes, input_dim]
+            edge_index: Edge indices [2, num_edges]
+            batch: Batch assignment [num_nodes] (required for graph-level)
             return_anomaly: Whether to return anomaly scores
+            node_level: If True, return node-level predictions; if False, graph-level
         
         Returns:
-            logits: Classification logits [batch_size, 2]
-            anomaly_scores: Anomaly scores [batch_size, 1] (optional)
+            If node_level=True:
+                logits: [num_nodes, 2]
+            If node_level=False:
+                logits: [batch_size, 2]
+                anomaly_scores: [batch_size, 1] (if return_anomaly=True)
         """
-        x, edge_index, batch = data.x, data.edge_index, data.batch
-        
         # Project input features
         x = self.input_proj(x)
         x = F.relu(x)
@@ -72,10 +76,19 @@ class CrossLayerThreatGNN(nn.Module):
             x = F.relu(x)
             x = F.dropout(x, p=self.dropout, training=self.training)
         
-        # Global pooling (aggregate node embeddings to graph level)
-        graph_emb = global_mean_pool(x, batch)  # [batch_size, hidden_dim]
+        # Node-level classification
+        if node_level:
+            logits = self.classifier(x)  # [num_nodes, 2]
+            if return_anomaly:
+                anomaly_scores = self.anomaly_head(x)  # [num_nodes, 1]
+                return logits, anomaly_scores
+            return logits
         
-        # Classification
+        # Graph-level classification (original behavior)
+        if batch is None:
+            batch = torch.zeros(x.size(0), dtype=torch.long, device=x.device)
+        
+        graph_emb = global_mean_pool(x, batch)  # [batch_size, hidden_dim]
         logits = self.classifier(graph_emb)
         
         if return_anomaly:
@@ -107,7 +120,7 @@ class ThreatDetectionTrainer:
             
             # Forward pass
             self.optimizer.zero_grad()
-            logits = self.model(batch)
+            logits = self.model(batch.x, batch.edge_index, batch=batch.batch)
             loss = self.criterion(logits, batch.y)
             
             # Backward pass
@@ -139,7 +152,7 @@ class ThreatDetectionTrainer:
             for batch in test_loader:
                 batch = batch.to(self.device)
                 
-                logits, anomaly_scores = self.model(batch, return_anomaly=True)
+                logits, anomaly_scores = self.model(batch.x, batch.edge_index, batch=batch.batch, return_anomaly=True)
                 _, predicted = torch.max(logits, 1)
                 
                 total += batch.y.size(0)
@@ -163,14 +176,24 @@ class ThreatDetectionTrainer:
             'labels': all_labels,
             'anomaly_scores': all_anomaly_scores
         }
-    
+
+    def save_model(self, filepath='threat_detection_model.pt'):
+    """Save model checkpoint"""
+    torch.save(self.model.state_dict(), filepath)
+    print(f"✓ Model saved to {filepath}")
+
     def detect_threat(self, graph, threshold=0.7):
         """Detect threat in single graph"""
         self.model.eval()
         
         with torch.no_grad():
             graph = graph.to(self.device)
-            logits, anomaly_score = self.model(graph, return_anomaly=True)
+            logits, anomaly_score = self.model(
+                graph.x, graph.edge_index, 
+                batch=graph.batch if hasattr(graph, 'batch') else None,
+                return_anomaly=True, 
+                node_level=False
+            )
             
             probs = F.softmax(logits, dim=1)
             threat_prob = probs[0][1].item()
@@ -184,6 +207,7 @@ class ThreatDetectionTrainer:
                 'confidence': max(probs[0]).item()
             }
 
+            # Save model
 
 if __name__ == "__main__":
     print("="*70)
