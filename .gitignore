@@ -1,1 +1,5 @@
 .DS_Store
+cross_layer/graph_data/edges.jsonl
+cross_layer/graph_data/nodes.jsonl
+slm/container_model/model.safetensors
+slm/network_model/model.safetensors
