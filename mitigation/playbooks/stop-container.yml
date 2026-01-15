@@ -1,0 +1,39 @@
+---
+# This playbook stops a running Docker container.
+
+- name: Stop a Docker Container
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  vars:
+    # Force Ansible to use the *correct python interpreter*
+    ansible_python_interpreter: /usr/local/bin/python3
+
+    target_container: "none"
+
+  tasks:
+    - name: "Fail if target_container is not set"
+      fail:
+        msg: "The 'target_container' must be set."
+      when: target_container == 'none'
+
+    - name: "Ensure docker + requests are installed for this interpreter"
+      pip:
+        name:
+          - docker
+          - requests
+        state: present
+
+    - name: "Stop the compromised container"
+      ansible.builtin.shell:
+        cmd: "docker -H unix:///var/run/docker.sock stop {{ target_container }}"
+      register: docker_state
+      changed_when: docker_state.rc == 0
+      ignore_errors: yes
+
+    - name: "Report stop action"
+      debug:
+        msg: "Container {{ target_container }} has been stopped."
+      when: docker_state.rc == 0
+

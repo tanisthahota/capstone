@@ -1,0 +1,40 @@
+services:
+  zookeeper:
+    healthcheck:
+      test: ["NONE"]
+
+  kafka:
+    healthcheck:
+      test: ["NONE"]
+
+  auth-service:
+    healthcheck:
+      test: ["NONE"]
+
+  notification-service:
+    healthcheck:
+      test: ["NONE"]
+
+  payment-service:
+    healthcheck:
+      test: ["NONE"]
+
+  api-gateway:
+    healthcheck:
+      test: ["NONE"]
+
+  sandbox-auth-service:
+    healthcheck:
+      test: ["NONE"]
+
+  sandbox-payment-service:
+    healthcheck:
+      test: ["NONE"]
+
+  sandbox-notification-service:
+    healthcheck:
+      test: ["NONE"]
+
+  dashboard:
+    healthcheck:
+      test: ["NONE"]

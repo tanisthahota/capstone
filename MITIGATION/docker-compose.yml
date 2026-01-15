@@ -1,0 +1,249 @@
+# docker-compose.yml
+# Production + Fully Isolated Sandbox (separate networks & kafka)
+
+services:
+  # -------------------------
+  # PRODUCTION ZOOKEEPER & KAFKA
+  # -------------------------
+  zookeeper:
+    image: wurstmeister/zookeeper
+    platform: linux/amd64
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    networks:
+      - paypal-network
+    restart: unless-stopped
+
+  kafka:
+    image: wurstmeister/kafka
+    platform: linux/amd64
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_CREATE_TOPICS: "application-logs:1:1,network-logs:1:1,container-logs:1:1"
+    depends_on:
+      - zookeeper
+    networks:
+      - paypal-network
+    restart: unless-stopped
+
+  # -------------------------
+  # PRODUCTION MICROSERVICES
+  # -------------------------
+  auth-service:
+    build: ./auth-service
+    container_name: auth-service
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - JWT_SECRET_FILE=/run/secrets/jwt-secret
+      - KAFKA_BROKER=kafka:9092
+    volumes:
+      - /tmp/jwt-secret.key:/run/secrets/jwt-secret:ro
+    depends_on:
+      - kafka
+    networks:
+      - paypal-network
+    restart: unless-stopped
+
+  notification-service:
+    build: ./notification-service
+    container_name: notification-service
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=development
+      - PORT=3003
+      - JWT_SECRET_FILE=/run/secrets/jwt-secret
+      - KAFKA_BROKER=kafka:9092
+    volumes:
+      - /tmp/jwt-secret.key:/run/secrets/jwt-secret:ro
+    depends_on:
+      - kafka
+    networks:
+      - paypal-network
+    restart: unless-stopped
+
+  payment-service:
+    build: ./payment-service
+    container_name: payment-service
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=development
+      - PORT=3002
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - NOTIFICATION_SERVICE_URL=http://notification-service:3003
+      - JWT_SECRET_FILE=/run/secrets/jwt-secret
+      - KAFKA_BROKER=kafka:9092
+    volumes:
+      - /tmp/jwt-secret.key:/run/secrets/jwt-secret:ro
+    depends_on:
+      - auth-service
+      - notification-service
+      - kafka
+    networks:
+      - paypal-network
+    restart: unless-stopped
+
+  api-gateway:
+    image: nginx:alpine
+    container_name: api-gateway
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - /tmp/jwt-secret.key:/run/secrets/jwt-secret:ro
+    environment:
+      - JWT_SECRET_FILE=/run/secrets/jwt-secret
+    command: ["nginx", "-g", "daemon off;", "-c", "/etc/nginx/nginx.conf"]
+    depends_on:
+      - auth-service
+      - payment-service
+      - notification-service
+    networks:
+      - paypal-network
+    restart: unless-stopped
+
+  # -------------------------
+  # PYTHON SCRIPTS (MITIGATION & STREAMS)
+  # Keeps it attached to production network but has docker.sock
+  # to control both prod & sandbox containers.
+  # -------------------------
+  python-scripts:
+    platform: linux/amd64
+    container_name: python-scripts
+    build: .
+    working_dir: /app
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      - ./:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - KAFKA_BROKER=kafka:9092
+      - CAP_IFACE=eth0
+    networks:
+      - paypal-network
+    restart: unless-stopped
+
+  # =========================
+  # SANDBOX: isolated infra
+  # separate network, kafka, and services
+  # =========================
+  sandbox-zookeeper:
+    image: wurstmeister/zookeeper
+    platform: linux/amd64
+    container_name: sandbox-zookeeper
+    ports:
+      - "22181:2181"
+    networks:
+      - sandbox-network
+    restart: unless-stopped
+
+  sandbox-kafka:
+    image: wurstmeister/kafka
+    platform: linux/amd64
+    container_name: sandbox-kafka
+    ports:
+      - "29092:9092"
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://sandbox-kafka:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_ZOOKEEPER_CONNECT: sandbox-zookeeper:2181
+      KAFKA_CREATE_TOPICS: "sandbox-application-logs:1:1,sandbox-network-logs:1:1,sandbox-container-logs:1:1"
+    depends_on:
+      - sandbox-zookeeper
+    networks:
+      - sandbox-network
+    restart: unless-stopped
+
+  sandbox-auth-service:
+    build: ./auth-service
+    container_name: sandbox-auth-service
+    environment:
+      - NODE_ENV=development
+      - PORT=4101
+      - JWT_SECRET_FILE=/run/secrets/sandbox-jwt-secret
+      - KAFKA_BROKER=sandbox-kafka:9092
+    ports:
+      - "4101:4101"
+    volumes:
+      - /tmp/sandbox-jwt.key:/run/secrets/sandbox-jwt-secret:ro
+    depends_on:
+      - sandbox-kafka
+    networks:
+      - sandbox-network
+    restart: unless-stopped
+
+  sandbox-notification-service:
+    build: ./notification-service
+    container_name: sandbox-notification-service
+    environment:
+      - NODE_ENV=development
+      - PORT=4103
+      - JWT_SECRET_FILE=/run/secrets/sandbox-jwt-secret
+      - KAFKA_BROKER=sandbox-kafka:9092
+    ports:
+      - "4103:4103"
+    volumes:
+      - /tmp/sandbox-jwt.key:/run/secrets/sandbox-jwt-secret:ro
+    depends_on:
+      - sandbox-kafka
+    networks:
+      - sandbox-network
+    restart: unless-stopped
+
+  sandbox-payment-service:
+    build: ./payment-service
+    container_name: sandbox-payment-service
+    environment:
+      - NODE_ENV=development
+      - PORT=4102
+      - AUTH_SERVICE_URL=http://sandbox-auth-service:4101
+      - NOTIFICATION_SERVICE_URL=http://sandbox-notification-service:4103
+      - JWT_SECRET_FILE=/run/secrets/sandbox-jwt-secret
+      - KAFKA_BROKER=sandbox-kafka:9092
+    ports:
+      - "4102:4102"
+    volumes:
+      - /tmp/sandbox-jwt.key:/run/secrets/sandbox-jwt-secret:ro
+    depends_on:
+      - sandbox-auth-service
+      - sandbox-notification-service
+    networks:
+      - sandbox-network
+    restart: unless-stopped
+
+  sandbox-api-gateway:
+    image: nginx:alpine
+    container_name: sandbox-api-gateway
+    ports:
+      - "8086:80"
+    volumes:
+      - ./sandbox-nginx.conf:/etc/nginx/nginx.conf
+      - /tmp/sandbox-jwt.key:/run/secrets/sandbox-jwt-secret:ro
+    depends_on:
+      - sandbox-auth-service
+      - sandbox-payment-service
+      - sandbox-notification-service
+    networks:
+      - sandbox-network
+    restart: unless-stopped
+
+networks:
+  paypal-network:
+    driver: bridge
+
+  sandbox-network:
+    driver: bridge
+

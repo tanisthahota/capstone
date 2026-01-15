@@ -1,0 +1,297 @@
+# docker-compose.yml
+# 'version' is deprecated and removed intentionally.
+
+services:
+  zookeeper:
+    image: wurstmeister/zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    networks:
+      - paypal-network
+    restart: unless-stopped
+    # raise ulimits and give a modest memory ceiling so the container and JVM
+    # won't exhaust host small-machine resources
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+      nproc: 65536
+    mem_limit: 1g
+    healthcheck:
+      test: ["CMD-SHELL", "echo ruok | nc -w 2 localhost 2181 || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  kafka:
+    image: wurstmeister/kafka
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:9092"
+      KAFKA_LISTENERS: "PLAINTEXT://0.0.0.0:9092"
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_CREATE_TOPICS: "application-logs:1:1,network-logs:1:1,container-logs:1:1,threat-alerts:1:1"
+      KAFKA_HEAP_OPTS: "-Xms256m -Xmx512m"
+    depends_on:
+      - zookeeper
+    networks:
+      - paypal-network
+    restart: unless-stopped
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    mem_limit: 1g
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 9092 || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+
+  auth-service:
+    build: ./auth-service
+    container_name: auth-service
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - JWT_SECRET_FILE=/run/secrets/jwt-secret
+      - KAFKA_BROKER=kafka:9092
+    volumes:
+      - /tmp/jwt-secret.key:/run/secrets/jwt-secret:ro
+    depends_on:
+      - kafka
+    networks:
+      - paypal-network
+    restart: unless-stopped
+    healthcheck:
+      # expects your service to expose some HTTP health endpoint at /health.
+      # If you don't have one, change to an appropriate path or a tcp check.
+      test: ["CMD-SHELL", "wget --spider --quiet http://localhost:3001/health || exit 1"]
+      interval: 7s
+      timeout: 3s
+      retries: 5
+
+  notification-service:
+    build: ./notification-service
+    container_name: notification-service
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=development
+      - PORT=3003
+      - JWT_SECRET_FILE=/run/secrets/jwt-secret
+      - KAFKA_BROKER=kafka:9092
+    volumes:
+      - /tmp/jwt-secret.key:/run/secrets/jwt-secret:ro
+    depends_on:
+      - kafka
+    networks:
+      - paypal-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider --quiet http://localhost:3003/health || exit 1"]
+      interval: 7s
+      timeout: 3s
+      retries: 5
+
+  payment-service:
+    build: ./payment-service
+    container_name: payment-service
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=development
+      - PORT=3002
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - NOTIFICATION_SERVICE_URL=http://notification-service:3003
+      - JWT_SECRET_FILE=/run/secrets/jwt-secret
+      - KAFKA_BROKER=kafka:9092
+    volumes:
+      - /tmp/jwt-secret.key:/run/secrets/jwt-secret:ro
+    depends_on:
+      - auth-service
+      - notification-service
+      - kafka
+    networks:
+      - paypal-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider --quiet http://localhost:3002/health || exit 1"]
+      interval: 7s
+      timeout: 3s
+      retries: 5
+
+  api-gateway:
+    image: nginx:alpine
+    container_name: api-gateway
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - /tmp/jwt-secret.key:/run/secrets/jwt-secret:ro
+      - ./wait-for.sh:/usr/local/bin/wait-for.sh:ro   # script below
+    environment:
+      - JWT_SECRET_FILE=/run/secrets/jwt-secret
+    # use a small wrapper that waits for auth-service to be resolvable/accept connections
+    # replace previous command that used wait-for.sh
+    command: ["sh", "-c", "while ! nc -z auth-service 3001; do sleep 1; done; nginx -g 'daemon off;' -c /etc/nginx/nginx.conf"]
+    depends_on:
+      - auth-service
+      - payment-service
+      - notification-service
+    networks:
+      - paypal-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider --quiet http://localhost:80/ || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  python-scripts:
+    container_name: python-scripts
+    build:
+      context: .
+      dockerfile: python-scripts.Dockerfile
+    working_dir: /workspace
+    volumes:
+      - ..:/workspace
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - KAFKA_BROKER=kafka:9092
+    networks:
+      - paypal-network
+    restart: unless-stopped
+
+  # Sandbox containers for mitigation testing
+  sandbox-api-gateway:
+    image: nginx:alpine
+    container_name: sandbox-api-gateway
+    ports:
+      - "8081:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - /tmp/jwt-secret.key:/run/secrets/jwt-secret:ro
+      - ./wait-for.sh:/usr/local/bin/wait-for.sh:ro
+    environment:
+      - JWT_SECRET_FILE=/run/secrets/jwt-secret
+    # replace previous command that used wait-for.sh
+    command: ["sh", "-c", "while ! nc -z auth-service 3001; do sleep 1; done; nginx -g 'daemon off;' -c /etc/nginx/nginx.conf"]
+    networks:
+      - paypal-network
+    restart: unless-stopped
+    depends_on:
+      - sandbox-auth-service
+      - sandbox-payment-service
+      - sandbox-notification-service
+
+  sandbox-auth-service:
+    build: ./auth-service
+    container_name: sandbox-auth-service
+    ports:
+      - "3011:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - JWT_SECRET_FILE=/run/secrets/jwt-secret
+      - KAFKA_BROKER=kafka:9092
+    volumes:
+      - /tmp/jwt-secret.key:/run/secrets/jwt-secret:ro
+    depends_on:
+      - kafka
+    networks:
+      - paypal-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider --quiet http://localhost:3001/health || exit 1"]
+      interval: 7s
+      timeout: 3s
+      retries: 5
+
+  sandbox-payment-service:
+    build: ./payment-service
+    container_name: sandbox-payment-service
+    ports:
+      - "3012:3002"
+    environment:
+      - NODE_ENV=development
+      - PORT=3002
+      - AUTH_SERVICE_URL=http://sandbox-auth-service:3001
+      - NOTIFICATION_SERVICE_URL=http://sandbox-notification-service:3003
+      - JWT_SECRET_FILE=/run/secrets/jwt-secret
+      - KAFKA_BROKER=kafka:9092
+    volumes:
+      - /tmp/jwt-secret.key:/run/secrets/jwt-secret:ro
+    depends_on:
+      - sandbox-auth-service
+      - kafka
+    networks:
+      - paypal-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider --quiet http://localhost:3002/health || exit 1"]
+      interval: 7s
+      timeout: 3s
+      retries: 5
+
+  sandbox-notification-service:
+    build: ./notification-service
+    container_name: sandbox-notification-service
+    ports:
+      - "3013:3003"
+    environment:
+      - NODE_ENV=development
+      - PORT=3003
+      - JWT_SECRET_FILE=/run/secrets/jwt-secret
+      - KAFKA_BROKER=kafka:9092
+    volumes:
+      - /tmp/jwt-secret.key:/run/secrets/jwt-secret:ro
+    depends_on:
+      - kafka
+    networks:
+      - paypal-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider --quiet http://localhost:3003/health || exit 1"]
+      interval: 7s
+      timeout: 3s
+      retries: 5
+  mitigation-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.mitigation
+    container_name: mitigation-service
+    depends_on:
+      - kafka
+    networks:
+      - paypal-network
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock  # For Docker-in-Docker
+    environment:
+      - PREFECT_API_URL=http://host.docker.internal:4200/api
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: python /workspace/pipeline/app_mitigate_flow.py
+
+  dashboard:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: threat-dashboard
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=development
+    depends_on:
+      - kafka
+    networks:
+      - paypal-network
+
+networks:
+  paypal-network:
+    driver: bridge

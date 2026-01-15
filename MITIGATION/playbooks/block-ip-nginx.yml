@@ -1,0 +1,51 @@
+---
+# This playbook blocks a source IP by adding a 'deny' rule
+# to the Nginx container acting as an API Gateway.
+#
+# It creates a small .conf file, copies it into the container,
+# and reloads the Nginx configuration.
+#
+# Required_Vars:
+#   - source_ip: The attacker's IP to block (e.g., "1.2.3.4").
+#   - target_container_name: The Nginx container name (e.g., "paypal-api-gateway-1").
+
+- name: Block Attacker IP in Nginx Gateway
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  vars:
+    source_ip: "1.1.1.1" # Default, will be overridden
+    target_container_name: "none" # Default, will be overridden
+    block_conf_content: "deny {{ source_ip }};"
+    temp_conf_file: "/tmp/block_{{ source_ip }}.conf"
+    container_conf_path: "/etc/nginx/conf.d/block_{{ source_ip }}.conf"
+
+  tasks:
+    - name: "Fail if variables are not set"
+      fail:
+        msg: "Both 'source_ip' and 'target_container_name' must be set."
+      when: source_ip == "1.1.1.1" or target_container_name == "none"
+
+    - name: "Create block file on the host"
+      ansible.builtin.copy:
+        content: "{{ block_conf_content }}"
+        dest: "{{ temp_conf_file }}"
+        mode: '0644'
+      
+    - name: "Copy block file into the Nginx container"
+      ansible.builtin.command:
+        cmd: "docker cp {{ temp_conf_file }} {{ target_container_name }}:{{ container_conf_path }}"
+      register: copy_result
+      changed_when: copy_result.rc == 0
+
+    - name: "Reload Nginx configuration inside the container"
+      ansible.builtin.command:
+        cmd: "docker exec {{ target_container_name }} nginx -s reload"
+      register: reload_result
+      changed_when: reload_result.rc == 0
+
+    - name: "Clean up block file from the host"
+      ansible.builtin.file:
+        path: "{{ temp_conf_file }}"
+        state: absent

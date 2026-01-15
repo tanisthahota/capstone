@@ -1,0 +1,35 @@
+---
+# This playbook VERIFIES that the 'block-ip-nginx.yml' playbook worked.
+# It 'docker exec's into the container and searches the config for the IP.
+#
+# Required_Vars:
+#   - target_container_name: The Nginx container to check (e.g., "test-gateway").
+#   - expected_ip: The attacker's IP we expect to find (e.g., "1.2.3.4").
+
+- name: Verify IP Block in Nginx Config
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  vars:
+    target_container_name: "test-gateway"
+    expected_ip: "1.1.1.1" # Default, will be overridden
+
+  tasks:
+    - name: "Check if block file exists inside the container"
+      ansible.builtin.command:
+        cmd: "docker exec {{ target_container_name }} ls /etc/nginx/conf.d/block_{{ expected_ip }}.conf"
+      register: file_check
+      changed_when: false
+      failed_when: file_check.rc != 0
+
+    - name: "Check if config contains the correct 'deny' rule"
+      ansible.builtin.command:
+        cmd: "docker exec {{ target_container_name }} grep 'deny {{ expected_ip }};' /etc/nginx/conf.d/block_{{ expected_ip }}.conf"
+      register: grep_check
+      changed_when: false
+      failed_when: grep_check.rc != 0
+
+    - name: "Verification successful"
+      debug:
+        msg: "Verified that '{{ expected_ip }}' is correctly blocked in {{ target_container_name }}."

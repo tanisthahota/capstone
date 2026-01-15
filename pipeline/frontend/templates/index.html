@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Threat Mitigation Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <div class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-indigo-700 text-white shadow-lg">
+            <div class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 flex justify-between items-center">
+                <h1 class="text-3xl font-bold">Threat Mitigation Dashboard</h1>
+                <div class="flex items-center space-x-4">
+                    <div class="bg-indigo-600 px-4 py-2 rounded-lg">
+                        <div class="text-sm text-indigo-200">Total Threats</div>
+                        <div id="total-threats" class="text-2xl font-bold">0</div>
+                    </div>
+                    <div class="bg-indigo-600 px-4 py-2 rounded-lg">
+                        <div class="text-sm text-indigo-200">Blocked IPs</div>
+                        <div id="blocked-ips" class="text-2xl font-bold">0</div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Threat List -->
+                <div class="lg:col-span-2 bg-white rounded-lg shadow p-6">
+                    <h2 class="text-xl font-semibold mb-4">Recent Threats</h2>
+                    <div class="overflow-y-auto" style="max-height: 500px;">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Threat</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source IP</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Target</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Confidence</th>
+                                </tr>
+                            </thead>
+                            <tbody id="threats-list" class="bg-white divide-y divide-gray-200">
+                                <!-- Threats will be inserted here by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Stats and Actions -->
+                <div class="space-y-6">
+                    <!-- Threat Distribution -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h2 class="text-xl font-semibold mb-4">Threat Distribution</h2>
+                        <div class="h-64">
+                            <canvas id="threatChart"></canvas>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

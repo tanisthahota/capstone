@@ -1,0 +1,37 @@
+---
+# This playbook VERIFIES that the 'stop-container.yml' playbook worked.
+# It uses 'docker inspect' to confirm the container's state is 'stopped'.
+#
+# Required_Vars:
+#   - target_container_name: The container to check (e.g., "test-service").
+
+- name: Verify Container is Stopped
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  vars:
+    target_container_name: "test-service"
+
+  tasks:
+    - name: "Ensure docker-py is installed"
+      ansible.builtin.pip:
+        name: docker
+        state: present
+      become: yes
+
+    - name: "Inspect container state"
+      community.docker.docker_container_info:
+        name: "{{ target_container_name }}"
+      register: container_info
+
+    - name: "Fail if container is not stopped or not found"
+      fail:
+        msg: "Container '{{ target_container_name }}' state is '{{ container_info.container.State.Status }}', not 'exited' or 'stopped'."
+      when: >
+        container_info.container is not defined or
+        container_info.container.State.Status not in ['exited', 'stopped']
+    
+    - name: "Verification successful"
+      debug:
+        msg: "Verified that '{{ target_container_name }}' is stopped."

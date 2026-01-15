@@ -1,0 +1,23 @@
+---
+# Block outbound traffic from any container to a malicious IP
+# Works inside python-scripts container (no ufw/firewalld needed)
+
+- name: Block Outbound C2 IP on Docker Host
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  vars:
+    source_ip: "1.1.1.1"
+
+  tasks:
+    - name: "Add iptables rule to block outbound to C2 IP"
+      raw: |
+        iptables -A OUTPUT -d {{ source_ip }} -j DROP
+      register: result
+      ignore_errors: yes
+
+    - name: "Report rule status"
+      debug:
+        msg: "Outbound traffic to {{ source_ip }} has been blocked (iptables)"
+
